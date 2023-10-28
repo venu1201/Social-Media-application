@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react'
 // import { getuserbyid } from '../../../actions/Auth'
 import {fetchtopheadlines} from '../../../actions/News';
 import { useDispatch } from 'react-redux';
-import axios from 'axios';
-import { news } from '../../../assets';
 import { useNavigate } from 'react-router-dom';
 const LatestNews = () => {
     const [random,setrandom]=useState(null);

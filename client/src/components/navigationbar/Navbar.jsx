@@ -22,7 +22,7 @@ const Navbar = () => {
   const userdata1=useSelector((state)=>state.authData);
   const location = useLocation();
   useEffect(() => {
-    dispatch(getselfdata(userdata1.username));
+    dispatch(getselfdata(userdata1?.username));
   }, [location])
   
   // useEffect(() => {
