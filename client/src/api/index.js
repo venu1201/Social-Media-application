@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 
-const API = axios.create({baseURL:'http://localhost:5000'});
+const API = axios.create({baseURL:'https://server-3v26ix77m-venu1201.vercel.app'});
 const NewsAPI = axios.create({baseURL:'https://newsapi.org/v2'});
 // const BASE_URL=  `http://localhost:5000`;
 export const getselfdata=(username)=> API.get(`/user/${username}`);

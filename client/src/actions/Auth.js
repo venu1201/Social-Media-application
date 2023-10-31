@@ -49,10 +49,9 @@ export const signin = (formdata, navigate) => async (dispatch) => {
     dispatch(auth_success(data));
     navigate('/');
   } catch (error) {
-    const errorMessage = error?.response?.message;
     // dispatch({ type: 'SIGNIN_ERROR', payload: errorMessage });
-    dispatch(signin_error(errorMessage));
-  }
+    console.log(error);
+    }
 };
 // export const googlesignin=(formdata)=>async(dispatch)=>{
 //   try {
@@ -108,8 +107,9 @@ export const signup = (formdata, setisSignin, isSignin) => async (dispatch) => {
     // dispatch({ type: 'AUTH_SUCCESS', data });
     setisSignin(!isSignin)
   } catch (error) {
-    const errorMessage = error.response.data;
-    dispatch(signup_error(errorMessage));
+    console.log(error);
+    // const errorMessage = error.response.data;
+    // dispatch(signup_error(errorMessage));
     // dispatch({ type: 'SIGNUP_ERROR', payload: errorMessage });
   }
 };
