@@ -49,7 +49,7 @@ export const signin = (formdata, navigate) => async (dispatch) => {
     dispatch(auth_success(data));
     navigate('/');
   } catch (error) {
-    const errorMessage = error.response.data;
+    const errorMessage = error?.response?.message;
     // dispatch({ type: 'SIGNIN_ERROR', payload: errorMessage });
     dispatch(signin_error(errorMessage));
   }
