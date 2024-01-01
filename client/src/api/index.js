@@ -2,7 +2,7 @@ import axios from 'axios';
 
 
 // const API = axios.create({baseURL:'https://server-3v26ix77m-venu1201.vercel.app'});
-const API = axios.create({baseURL:'http://localhost:5000'});
+const API = axios.create({baseURL:'https://server-rust-three.vercel.app/'});
 const headers={Authorization:`Bearer`}
 const NewsAPI = axios.create({baseURL:'https://newsapi.org/v2'});
 // const BASE_URL=  `http://localhost:5000`;
