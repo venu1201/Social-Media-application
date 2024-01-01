@@ -9,7 +9,7 @@ import { BiLogOut } from "react-icons/bi";
 
 import { CgProfile, CgAddR } from "react-icons/cg";
 import { clear_google } from '../../reducers';
-const Navbar = () => {
+const DownNavbar = () => {
   const dispatch = useDispatch();
   const authData = useSelector((state) => state.authData);
   if(authData===null)
@@ -116,4 +116,4 @@ const Navbar = () => {
   )
 }
 
-export default Navbar
+export default DownNavbar
