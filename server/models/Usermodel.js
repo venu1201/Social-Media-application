@@ -1,5 +1,11 @@
 import mongoose from "mongoose";
 
+const NotificationsSchema=mongoose.Schema({
+    username:String,
+    postId:String,
+    message:String,
+    seen:Boolean,
+  });
 const userSchema = mongoose.Schema({
     username:{type:String ,require:true},
     email:{type:String ,require:true},
@@ -12,6 +18,8 @@ const userSchema = mongoose.Schema({
     following:[],
     profilepicture:String,
     pending:[],
+    savedposts:[],
+    Notifications:[NotificationsSchema],
     private: { type: Boolean, default: false } 
     
 

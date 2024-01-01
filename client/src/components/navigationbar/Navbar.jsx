@@ -2,60 +2,83 @@ import React, { useEffect, useState } from 'react'
 import { logo2 } from '../../assets'
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import CreatePost from '../postssection/components/CreatePost';
-import { getselfdata } from '../../actions/Auth';
 import { AiFillHome } from "react-icons/ai";
 import { BsFillRocketTakeoffFill, BsFillChatDotsFill } from "react-icons/bs";
 import { MdNotificationsActive } from "react-icons/md";
 import { FiSettings } from "react-icons/fi";
+import { BiLogOut } from "react-icons/bi";
+
 import { CgProfile, CgAddR } from "react-icons/cg";
+import { clear_google } from '../../reducers';
 const Navbar = () => {
   const dispatch = useDispatch();
-  const array = ["Home", "Explore", "Chat", "Notifications", "Create Post", "Profile", "Settings"];
+  const array = ["Home", "Explore", "People", "Chat", "Notifications", "Create Post"];
   const [active, setactive] = useState(0);
-  const remove = [2, 3, 6];
-  const iconarray = [<AiFillHome className='h-9 w-9  sm:h-5 sm:w-5' />, <BsFillRocketTakeoffFill className='h-9 w-9 sm:h-5 sm:w-5' />, <BsFillChatDotsFill className='h-9 w-9 sm:h-5 sm:w-5' />, <MdNotificationsActive className='h-9 w-9 sm:h-5 sm:w-5' />, <CgAddR className='h-9 w-9 sm:h-5 sm:w-5' />, <CgProfile className='h-9 w-9 sm:h-5 sm:w-5' />, <FiSettings className='h-9 w-9 sm:h-5 sm:w-5' />]
-
-  const [createpost, setcreatepost] = useState(false);
+  const iconarray = [
+    <AiFillHome className='h-7 w-7  sm:h-5 sm:w-5' />,
+    <BsFillRocketTakeoffFill className='h-7 w-7 sm:h-5 sm:w-5' />,
+    <CgProfile className='h-7 w-7 sm:h-5 sm:w-5' />,
+    <BsFillChatDotsFill className='h-7 w-7 sm:h-5 sm:w-5' />,
+    <MdNotificationsActive className='h-7 w-7 sm:h-5 sm:w-5' />,
+    <CgAddR className='h-7 w-7 sm:h-5 sm:w-5' />,
+  ]
 
   const navigate = useNavigate();
-  const userdata1=useSelector((state)=>state.authData);
+  const authData = useSelector((state) => state.authData);
   const location = useLocation();
-  useEffect(() => {
-    dispatch(getselfdata(userdata1?.username));
-  }, [location])
-  
+  if(authData===null)
+  {
+    navigate('/Auth/Signin')
+  }
+  // useEffect(() => {
+  //   dispatch(getselfdata(userdata1?.username));
+  // }, [location])
+
   // useEffect(() => {
   //   dispatch(getuserdetails(setuserdata, userdata1?.username));
   // }, [])
+  const hasUnseenNotification = (notificationList) => {
+    return notificationList.some((notification) => notification.seen === false);
+  };
   useEffect(() => {
+    if (location.pathname.includes('/')) {
+      setactive(0);
+    }
+    if (location.pathname.includes('/Explore')) {
+      setactive(1);
+    }
+    if (location.pathname.includes('/People')) {
+      setactive(2);
+    }
     if (location.pathname.includes('/Profile')) {
-      setactive(5);
+      setactive(-1);
     }
     if (location.pathname.includes('/Notifications')) {
-      setactive(3);
+      setactive(4);
     }
-    if (location.pathname.includes('/Settings')) {
-      setactive(6);
+    if (location.pathname.includes('/CreatePost')) {
+      setactive(5);
     }
-    
+
 
   }, [location])
   const handleclick = (index) => {
     setactive(index);
-
-    if (array[index] === 'Create Post') {
-      setcreatepost(!createpost);
-
+    if (array[index] === 'People') {
+      navigate('/People')
     }
-
+    if (array[index] === 'Create Post') {
+      navigate('/CreatePost');
+    }
+    if (array[index] === 'Explore') {
+      navigate('/Explore');
+    }
     if (array[index] === 'Profile') {
-      navigate(`/Profile/${userdata1?.username}`)
+      navigate(`/Profile/${authData?.username}`)
 
     }
     if (array[index] === 'Home') {
       navigate('/')
-
     }
 
     if (array[index] === 'Profile') {
@@ -67,61 +90,58 @@ const Navbar = () => {
     }
     if (array[index] === 'Notifications') {
       navigate('/Notifications');
-
     }
   }
-
-
+  const handlelogout = () => {
+    localStorage.removeItem('profile');   
+    dispatch(clear_google());
+    navigate('/Auth/Signin');
+  }
+  if(authData===null)
+  return
   return (
-    <div className='flex ss:flex-col font-poppins  bg-[--black3] shadow-md shadow-cyan-300 gap-14 ss:h-screen h-[10%] ss:px-0 px-4 ssm:w-[27%] sm:w-[32%] w-full ss:w-[15%] md:w-[25%] ac:w-[22%]'>
-      <CreatePost data={createpost} data2={setcreatepost} />
-      <div onClick={() => navigate('/')} className='ss:flex hidden mt-5  gap-4 w-full h-[70px] px-5 items-center'>
-        <img className='h-full ' src={logo2} alt="" />
-        <div className='sm:flex hidden font-bold text-[25px] justify-center items-center'>
-          SocialVerse
+    <div className='flex  flex-col font-poppins justify-between  bg-gray-950 shadow-md border-r-2 border-cyan-400 gap-7 h-full w-full'>
+      <div className='flex flex-col gap-7 w-full'>
+        <div onClick={() => navigate('/')} className='flex  mt-5  gap-3 w-full h-[70px] Small:pl-3 pl-4 items-center'>
+          <img className='h-[50px] ' src={logo2} alt="" />
+          <div className='Small:flex hidden font-serif font-bold text-[23px] justify-center items-center'>
+            SocialVerse
+          </div>
         </div>
-      </div>
-      <div className='flex  w-full px-5 justify-center items-center ss:gap-5'>
-        <div className='flex w-full sm:gap-10 ss:gap-12 xs:gap-3 ss:flex-col ss:justify-normal justify-center '>
+        <div onClick={()=>navigate(`/Profile/${authData.username}`)} className='w-full  flex gap-2 pl-3   h-[60px]'>
+            <div className='min-h-[60px]  '>
+              <img className='h-[60px] w-[60px] rounded-full' src={authData.profilepicture} alt="" />
+            </div>
+            <div className='Small:flex hidden w-[calc(100%-80px)]  justify-center gap-1 flex-col  '>
+                <div className='flex text-[20px] whitespace-nowrap overflow-ellipsis overflow-scroll w-full font-bold items-center h-[50px]'>
+                  {authData.firstname+" "+authData.lastname}
+                </div>
+                <div className='h-[50px] w-full text-slate-400 whitespace-nowrap overflow-ellipsis overflow-scroll items-start text-[20px]'>
+                  {"@"+authData.username}
+                </div>
+            </div>
+        </div>
+        <div className='flex flex-col mt-5 w-full gap-8 pl-6  '>
           {array.map((item, index) => (
-            <li key={index} className={`list-none ss:flex h-[25px] ${remove.includes(index) === true ? "hidden" : "flex"} justify-between items-center  sm:mx-5 mx-3 `}>
-              <span onClick={() => handleclick(index)} className={`cursor-pointer justify-center items-center flex ${active === index ? "text-cyan-500" : "animate-none"} `}>
-                <div className={`mr-3  `}>
-                  {iconarray[index]}
-                </div>
-                <div className='sm:flex mt-[1px]  hidden justify-center items-center '>
-                  {item}
-                </div>
-
-
-              </span>
-              {item === 'Notifications' ? (
-                userdata1?.pending?.length === 0 ? (
-                  <div className='hidden'>
-
-                  </div>
-                ) : (
-                  <span
-                    className={`${userdata1?.pending?.length !== 0 ? "" : ""} w-[25px] sm:flex hidden justify-center items-center text-[15px] h-[25px] rounded-full`}
-                  >
-                    {userdata1?.pending?.length}
-                  </span>
-
-                )
-              ) : (
-                <div className='hidden'>
-
-                </div>
-              )}
-
-            </li>
+            <button onClick={() => handleclick(index)} key={index} className={`flex  text-[20px] cursor-pointer  gap-2 ${active === index ? "text-cyan-500" : ""}`} >
+              <div className={`flex justify-center ${(item==='Notifications'===true && hasUnseenNotification(authData.Notifications)===true)?"text-red-800 animate-pulse":"animate-none"} items-center`}>
+                {iconarray[index]}
+              </div>
+              <div className={`Small:flex h-full hidden text-[18px]  ${(item==='Notifications'===true && hasUnseenNotification(authData.Notifications)===true)?"text-orange-700 animate-pulse":"animate-none"} justify-center items-center`}>
+                {item}
+              </div>
+            </button>
+            
           ))}
 
         </div>
-
-
       </div>
-
+      <div className='flex pl-6 h-[60px]'>
+        <button onClick={handlelogout} className='flex h-[50px]  justify-center items-center gap-3'>
+        <BiLogOut className='h-7 w-7' />
+        <span className='Small:flex hidden text-[17px] justify-center items-center'>Logout</span>
+        </button>
+      </div>
 
     </div>
   )

@@ -1,14 +1,10 @@
 
 import './App.css';
 //import UilReact from '@iconscout/react-unicons/icons/uil-react'
-import Topbutton from './components/Topbutton';
-import Input from './components/Input';
 import TimeAndLocation from './components/TimeAndLocation';
 import TemperatureAndDetails from './components/TemperatureAndDetails';
-import Forecast from './components/Forecast';
 import GetFormattedWeatherData from './services/WeatherServices';
 import { useEffect, useState } from 'react';
-import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 function App() {
 
@@ -58,12 +54,12 @@ function App() {
     return "from-orange-700 to-yellow-500"
   } 
   return (
-    <div className={`max-w-full  bg-gradient-to-br from-cyan-900 to-blue-600 shadow-xl  ${formatbackground()}`}>
+    <div className={`w-full pt-3  bg-gradient-to-br from-cyan-900 to-blue-600 shadow-xl  ${formatbackground()}`}>
       {/* <Topbutton setQuery={setQuery}/> */}
-      <Input setQuery={setQuery} units={units} setUnits={setUnits}/>
+      {/* <Input setQuery={setQuery} units={units} setUnits={setUnits}/> */}
 
       {weather &&(
-      <div className=''>
+      <div className='flex flex-col'>
       <TimeAndLocation weather={weather}/>
       <TemperatureAndDetails weather={weather}/>
 

@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import postRoutes from './routes/Posts.js';
 import userRoutes from './routes/user.js'
+import authRoutes from './routes/Auth.js'
 const app = express();
 
 app.use(bodyParser.json({ limit: '30mb', extended: true }))
@@ -22,3 +23,4 @@ mongoose.set('useFindAndModify', false);
 
 app.use('/posts', postRoutes);
 app.use('/user', userRoutes);
+app.use('/auth',authRoutes);

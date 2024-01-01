@@ -1,6 +1,187 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken'
 import User from '../models/Usermodel.js'
+import PostModel from "../models/Postmodel.js";
+
+
+export const getuserbyId=async(req,res)=>{
+    const username=req.params.id;
+
+    try {
+        const user=await User.findOne({username});
+        if(!user)
+        {
+            res.status(404).json({message:"User not Found"});
+        }
+        res.status(200).json({result:user});
+    } catch (error) {
+        res.status(500).json({ message: "Something went wrong" });
+    }
+}
+export const getProfileData=async(req,res)=>{
+    const username=req.params.id;
+    console.log("profiledata",username)
+    try {
+        const user=await User.findOne({username});
+        if(!user)
+        {
+            res.status(404).json({message:"User not Found"});
+        }
+        const result = await PostModel.find({username:username}).sort({createdAt:-1});
+        const result2=await (await PostModel.find({_id:{$in:user.savedposts}}))
+        res.status(200).json({result:user,posts:result,saved:result2});
+    } catch (error) {
+        res.status(500).json({ message: "Something went wrong" });
+
+    }
+}
+export const getNetwork=async(req,res)=>{
+    const params=req.params;
+    console.log(params);
+    try {
+        const user=await User.findOne({username:params.user});
+        if(user)
+        {
+            if(params.type==="Followers")
+            {
+                const followers=await User.find({username:{$in:user.followers}});
+                res.status(200).json({result:followers});
+            }
+            else
+            {
+                const following = await User.find({username:{$in:user.following}});
+                res.status(200).json({result:following});
+            }
+        }
+        else
+        res.status(404).json({message:"User not Found"});
+    } catch (error) {
+        res.status(500).json({ message: "Something went wrong" });
+
+    }
+}
+export const removeNetwork=async(req,res)=>{
+    const params=req.params;
+    console.log(params);
+    try {
+        const user=await User.findOne({username:params.user});
+        const touser=await User.findOne({username:params.touser});
+        if(params.type==="Followers")
+        {
+            const userupdatedfollowers=user.followers.filter(
+                (follower)=>follower!==params.touser
+            );
+            const touserupdatedfollowing=touser.following.filter(
+                (follower)=>follower!==params.user
+            );
+            await User.updateOne({username:params.user},{followers:userupdatedfollowers});
+            await User.updateOne({username:params.touser},{following:touserupdatedfollowing});
+            res.status(200).json({message:"Successfully Removed"})
+        }
+        else
+        {
+            const userupdatedfollowing=user.following.filter(
+                (follower)=>follower!==params.touser
+            );
+            const touserupdatedfollowers=touser.followers.filter(
+                (follower)=>follower!==params.user
+            );
+            await User.updateOne({username:params.user},{following:userupdatedfollowing});
+            await User.updateOne({username:params.touser},{following:touserupdatedfollowers});
+            res.status(200).json({message:"Successfully Unfollowed"});
+        }
+    } catch (error) {
+        res.status(500).json({ message: "Something went wrong" });
+
+    }
+}
+export const addNetwork=async(req,res)=>{
+    const params=req.params;
+    try {
+        const user=await User.findOne({username:params.user});
+        const touser=await User.findOne({username:params.touser});
+        if(user.following.includes(touser.username))
+        {
+            const userupdatedfollowing=user.following.filter(
+                (follower)=>follower!==params.touser
+            );
+            const touserupdatedfollowers=touser.followers.filter(
+                (follower)=>follower!==params.user
+            );
+            await User.updateOne({username:params.user},{following:userupdatedfollowing});
+            await User.updateOne({username:params.touser},{followers:touserupdatedfollowers});
+            user.following=userupdatedfollowing;
+            touser.followers=touserupdatedfollowers;
+            
+            res.status(200).json({result:user,touser:touser});
+        }
+        else
+        {
+            const userupdatedfollowing=[...user.following,params.touser];
+            const touserupdatedfollowers=[...touser.followers,params.user];
+            touser.Notifications=[...touser.Notifications,{username:user.username,seen:false,postId:null,message:'started following you , Checkout if you know him'}]
+            await User.updateOne({username:params.user},{following:userupdatedfollowing});
+            await User.updateOne({username:params.touser},{followers:touserupdatedfollowers,Notifications:touser.Notifications});
+            user.following=userupdatedfollowing;
+            touser.followers=touserupdatedfollowers;
+           
+            res.status(200).json({result:user,touser:touser});
+
+        }        
+    } catch (error) {
+        res.status(500).json({ message: "Something went wrong" });
+
+    }
+}
+export const updateUser=async(req,res)=>{
+    const user=req.body;
+    try {
+        const result=await User.updateOne({username:user.username},user)
+        // if(result.nModified===0)
+        // {
+        //     return res.status(404).json({message:"User not Found"});
+        // }
+        return res.status(200).json({result:user});
+    } catch (error) {
+        res.status(500).json({ message: "Something went wrong" });
+    }
+}
+export const SavePost=async(req,res)=>{
+    const {user,id}=req.params;
+    try {
+        const user2=await User.findOne({username:user});
+        const post=await PostModel.findById(id);
+        const postuser=await User.findOne({username:post.username});
+        if(user2)
+        {
+            if(user2?.savedposts?.includes(id))
+            {
+                const save=user2.savedposts.filter((item)=>item!==id);
+                await User.updateOne({username:user},{savedposts:save});
+            }
+            else
+            {
+                const save=[...user2.savedposts,id];
+                if(postuser.username!==user2.username)
+                {
+                    postuser.Notifications=[...postuser.Notifications,{username:user2.username,postId:id,seen:false,message:`has saved your Post `}]
+
+                }
+                await User.updateOne({username:user},{savedposts:save});
+                if(postuser.username!==user2.username)
+                await User.updateOne({username:postuser.username},{Notifications:postuser.Notifications});
+            }
+        }
+        const user1=await User.findOne({username:user});
+        res.status(200).json({result:user1});
+
+    } catch (error) {
+        res.status(500).json({ message: "Something went wrong" });
+
+    }
+}
+
+
 
 
 export const getusers = async (req, res) => {
@@ -18,277 +199,99 @@ export const getusers = async (req, res) => {
         res.status(500).json({ message: "Something went wrong" });
     }
 }
-export const getselfdata=async(req,res)=>{
-    const username=req.params.id;
+export const getTopCreators = async (req, res) => {
     try {
-        const user=await User.findOne({username});
-        if(user)
-        {
-            res.status(200).json({result:user});
-        }
-        else
-        {
-            res.status(404).json({message:"user not found"});
-        }
-    } catch (error) {
-        res.status(500).json({ message: "Something went wrong" });
-
-    }
+        // Fetch users from the database and calculate the score for each user
+        const topCreators = await User.aggregate([
+          {
+            $lookup: {
+              from: 'postmodels', // Assuming your PostModel collection is named 'postmodels'
+              localField: 'username',
+              foreignField: 'username',
+              as: 'posts',
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              username: 1,
+              profilepicture:1,
+              email: 1,
+              id: 1,
+              firstname: 1,
+              lastname: 1,
+              followers: { $size: '$followers' },
+              following: { $size: '$following' },
+              profilepicture: 1,
+              posts: { $size: '$posts' },
+            },
+          },
+          {
+            $addFields: {
+              totalScore: {
+                $add: ['$followers', '$following', '$posts'],
+              },
+            },
+          },
+          {
+            $sort: { totalScore: -1 },
+          },
+          {
+            $limit: 20,
+          },
+        ]);
+        // Send the response with the top 20 creators in the form of User schema
+        res.status(200).json({result:topCreators});
+      } catch (error) {
+        // Handle errors
+        console.error(error);
+        res.status(500).json({ message: 'Internal Server Error' });
+      }
+    
 }
-export const getuserbyid=async(req,res)=>{
-    const username=req.params.id;
+export const getNetworkByQuery = async (req, res) => {
+    const { query } = req.params; // assuming you're sending the query as a URL parameter
+  
     try {
-        const user=await User.findOne({username});
-        if(user)
-        {
-            res.status(200).json({result:user});
-        }
-        else
-        {
-            res.status(404).json({message:"user not found"});
-        }
+        const people = await User.find({
+            $or: [
+              { bio: { $regex: query, $options: 'i' } },
+              { username: { $regex: query, $options: 'i' } },
+              { firstname: { $regex: query, $options: 'i' } },
+              { lastname: { $regex: query, $options: 'i' } },
+              { email: { $regex: query, $options: 'i' } },
+            ]
+          });
+  
+      res.status(200).json({result:people});
     } catch (error) {
-        res.status(500).json({ message: "Something went wrong" });
-
+        res.status(500).json({ message: 'Internal Server Error' });
     }
-}
-export const getuserdetails = async (req, res) => {
-    const username = req.params.username;
-    try {
-        const user = await User.findOne({ username }).select('-password');
-        if (user === null)
-            res.status(404).json({ message: "no user found" });
-        res.status(200).json({ result: user });
-    } catch (error) {
+  };
 
-    }
-}
-export const getgoogleuser = async (req, res) => {
-    const email = req.params.email;
-
+  export const UpdateNotifications = async (req, res) => {
+    const { user } = req.params;
     try {
-        const user = await User.findOne({ email });
-        if (user === null)
-            res.status(200).json({ result: null, check: 2 });
-        // console.log(user);
-        const token = jwt.sign({ email: user.email, id: user._id }, 'task', { expiresIn: "1h" });
-        res.status(200).json({ result: user, check: 1, token });
+        await User.updateOne(
+            { username: user },
+            { $set: { "Notifications.$[elem].seen": true } },
+            { arrayFilters: [{ "elem.seen": false }], multi: true }
+        );
+        const result=await User.findOne({username:user});
+        res.status(200).json({ result });
     } catch (error) {
-        res.status(500);
-    }
-}
-export const signin = async (req, res) => {
-    const { username, password } = req.body;
-    // console.log(req.body);
-    try {
-        //const existinguser1=await User.findOne({email:username});
-        const existinguser = await User.findOne({ username });
-        if (!existinguser)
-            return res.status(404).json({ message: 'User not exits' });
-        const ispasswordcorrect = await bcrypt.compare(password, existinguser.password);
-        if (!ispasswordcorrect)
-            return res.status(400).json({ message: "invalid password" });
-        const token = jwt.sign({ email: existinguser.email, id: existinguser._id }, 'task', { expiresIn: "1h" });
-        // const {password,...data}=existinguser;
-        res.status(200).json({ result: existinguser, token });
-    } catch (error) {
-        res.status(500).json({ message: "something went wrong" });
-    }
-}
-export const signup = async (req, res) => {
-    const { email, username, password, firstname, lastname, bio, confirmpassword, picture } = req.body;
-    //console.log(req.body);
-    try {
-        const check = await User.findOne({ username });
-        if (check)
-            return res.status(404).json({ message: "username already Taken...Try different" });
-        const existinguser = await User.findOne({ email });
-        if (existinguser)
-            return res.status(404).json({ message: "user already exists" });
-        if (password != confirmpassword)
-            return res.status(404).json({ message: "password and confirm password dont match" });
-        const hashedpassword = await bcrypt.hash(password, 12);
-        const result = await User.create({ email, password: hashedpassword, username, firstname, lastname, bio: '', profilepicture: picture });
-        const token = jwt.sign({ email: result.email, id: result._id }, 'task', { expiresIn: "1h" });
-        // const {password,...data}=result;
-        res.status(200).json({ result, token });
-    } catch (error) {
-        res.status(500).json({ message: "something went wrong" });
-
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 }
 
 
-export const request = async (req, res) => {
-    const touser = req.params.username;
-    const { username } = req.body;
-    console.log(username,touser);
-
-    try {
-        const tousername = await User.findOne({ username: touser });
-        const user = await User.findOne({ username });
-        if (!tousername || !user)
-            res.status(404).json({ message: 'user not found' })
-
-        const { pending } = tousername;
-        if (pending.includes(username)) {
-            const updatedpending = pending.filter((user) => user !== username);
-            tousername.pending = updatedpending;
-            await User.updateOne({ username: touser }, { pending: updatedpending });
-        }
-        else {
-            const updatedpending = [...pending, username];
-            tousername.pending = updatedpending;
-            await User.updateOne({ username: touser }, { pending: updatedpending });
-        }
-        const updated = await User.findOne({ username: touser });
-        const updateduser= await User.findOne({username});
-        res.status(200).json({ result: updated,userdata: updateduser});
-        //console.log(pending)
+  
 
 
-    } catch (error) {
-        console.log(error);
-    }
-}
-export const getallpendingusers = async (req, res) => {
-    const pending = req.body;
 
-    try {
-        const allusers = [];
-        for (let i = 0; i < pending.length; i++) {
-            const user = await User.findOne({ username: pending[i] }).select('-password');
 
-            if (user) {
 
-                allusers.push(user);
-            }
-        }
-        res.status(200).json({ result: allusers });
-    } catch (error) {
-        console.log(error)
-    }
-}
-export const updateuserdetails = async (req, res) => {
-    const { username } = req.params;
-    const { firstname, lastname, bio, selectedfile } = req.body;
-    try {
-        const user = await User.findOne({ username: username });
-        if (!user) {
-            res.status(404).json({ message: 'user not found' });
-        }
-        if(selectedfile)
-        await User.updateOne({ username: username }, { firstname: firstname, lastname: lastname, bio: bio, profilepicture: selectedfile });
-        else
-        {
-            await User.updateOne({ username: username }, { firstname: firstname, lastname: lastname, bio: bio});
 
-        }
-        const result = await User.find({ username: username });
-        console.log(result)
-        res.status(200).json({ result: result });
-
-    } catch (error) {
-        console.log(error);
-    }
-}
-export const remove=async(req,res)=>{
-    const username=req.params.username;
-    const type=req.params.type;
-    const touser=req.body.username;
-    try {
-        const tousername=await User.findOne({username:touser});
-        const user=await User.findOne({username:username});
-        if(!user || !tousername)
-        {
-            res.status(404).json({message:"user not found"});
-        }
-        const tousernamefollowers=tousername.followers;
-        const tousernamefollowing=tousername.following;
-        const userfollowing=user.following;
-        const userfollowers=user.followers;
-        const userpending=user.pending;
-        const tousernamepending=tousername.pending;
-        const updateduserpending=userpending.filter((u)=>u!==tousername.username);
-        const updatedtousernamepending=tousernamepending.filter((u)=> u!==user.username);
-        if(type==='follower')
-        {
-            const updateduserfollower = userfollowers.filter((user) => user !== tousername.username);
-            const updatedtouserfollowing = tousernamefollowing.filter((u) => u !== user.username);
-            await User.updateOne({ username: user.username }, { followers:updateduserfollower,pending:updateduserpending});
-            await User.updateOne({ username: touser }, { following:updatedtouserfollowing,pending:updatedtousernamepending});
-
-        }
-        else if(type==='following')
-        {
-            const updateduserfollowing = userfollowing.filter((user) => user !== tousername.username);
-            const updatedtouserfollower = tousernamefollowers.filter((u) => u !== user.username);
-            await User.updateOne({ username: user.username }, { following:updateduserfollowing,pending:updateduserpending});
-            await User.updateOne({ username: touser }, { followers:updatedtouserfollower,pending:updatedtousernamepending});
-        }
-        else
-        {
-            // console.log(tousernamefollowers,tousernamefollowing)
-            const updateduserfollower = userfollowers.filter((u) => u !== tousername.username);
-            const updatedtouserfollowing = tousernamefollowing.filter((u) => u !== user.username);
-            const updateduserfollowing = userfollowing.filter((u) => u !== tousername.username);
-            const updatedtouserfollower = tousernamefollowers.filter((u) => u !== user.username);
-            // console.log(updatedtouserfollower,updatedtouserfollowing);
-            await User.updateOne({ username: username }, { following:updateduserfollowing,followers:updateduserfollower,pending:updateduserpending});
-            await User.updateOne({ username: touser }, { followers:updatedtouserfollower,following:updatedtouserfollowing,pending:updatedtousernamepending});
-        }
-        const user1=await User.findOne({username:username});
-        const user2=await User.findOne({username:touser});
-        console.log("hmmm",user1,user2)
-        res.status(200).json({ user: user1 , touser:user2 });
 
 
         
-    } catch (error) {
-        console.log(error)
-    }
-}
-export const acceptanddeleteuser = async (req, res) => {
-    const touser = req.params.username;
-    const { username, method } = req.body;
-    try {
-        const tousername = await User.findOne({ username: touser });
-        const user = await User.findOne({ username });
-        if (!tousername || !user)
-            res.status(404).json({ message: 'user not found' })
-
-        const { pending } = user;
-        const { followers } = user;
-        const { following } = tousername;
-        const pending1 = tousername.pending;
-        if (method === 'Accept') {
-            const updatedpending = pending.filter((user) => user !== touser);
-            console.log(updatedpending)
-            tousername.pending = updatedpending;
-            followers.push(touser);
-            following.push(username);
-            await User.updateOne({ username: username }, { pending: updatedpending, followers: followers });
-            await User.updateOne({ username: touser }, { following: following });
-        }
-        else if (method === 'Delete') {
-            const updatedpending = pending.filter((user) => user !== touser);
-            tousername.pending = updatedpending;
-            await User.updateOne({ username: username }, { pending: updatedpending });
-        }
-        else {
-            const updatedpending = pending.filter((user) => user !== touser);
-            tousername.pending = updatedpending;
-            followers.push(touser);
-            following.push(username);
-            pending1.push(username);
-            await User.updateOne({ username: username }, { pending: updatedpending, followers: followers });
-            await User.updateOne({ username: touser }, { following: following, pending: pending1 });
-        }
-        const updated = await User.findOne({ username: username });
-        res.status(200).json({ result: updated });
-        //console.log(pending)
-    } catch (error) {
-        console.log(error);
-    }
-
-}

@@ -1,6 +1,30 @@
 import * as api from '../api/index.js';
-import { box, profile_data } from '../reducers/index.js';
+import { box, profile_data, update_authData } from '../reducers/index.js';
 import { getuserbyid } from './Auth.js';
+
+export const updateUser=(formdata,setformdata,setloading,tf)=>async(dispatch)=>{
+  try {
+    const {data}=await api.updateUser(formdata);
+    setformdata(data.result);
+    dispatch(update_authData(data));
+    setloading(false);
+    tf("Update Success")
+  } catch (error) {
+    setloading(false);
+    console.log(error);
+
+  }
+}
+
+
+
+
+
+
+
+
+
+
 
 export const requesting = (username,user) => async (dispatch) => {
     try {

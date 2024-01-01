@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { getuser } from '../../actions/Auth'
-import Dashboard from '../../components/HomeDashboard/Dashboard'
+import Feeds from './Components/Feeds'
+import Features from './Components/Features'
+import { getuserbyId } from '../../api'
+import { update_authData } from '../../reducers'
 const Home = () => {
 
   const dispatch = useDispatch();
@@ -12,20 +14,35 @@ const Home = () => {
 
   useEffect(() => {
     if (!data) {
-      navigate('/Auth');
+      navigate('/Auth/Signin');
     } 
   }, [data, navigate]);
 
+  useEffect(() => {
+    const fecthUser=async()=>{
+      try {
+        const response=await getuserbyId(data.username);
+        dispatch(update_authData(response.data));
+      } catch (error) {
+          console.log(error);
+      }
+    }
+    fecthUser();
+  }, [])
+  
 
-
-  dispatch(getuser(data?.username));
   // console.log(state)
 
   
 
   return (
-    <div className='ss:h-screen h-[80%]  font-poppins  relative flex md:w-[75%] sm:w-[68%] ss:w-[90%] w-full ssm:w-[74%] ac:w-[78%]'>    
-      <Dashboard />       
+    <div className='h-full font-poppins relative flex w-full '>   
+      <div className='xlarge:w-[65%] xSmall:w-[70%] w-full h-full  '>
+          <Feeds/>
+      </div>
+      <div className='xlarge:w-[35%] xSmall:w-[30%] xSmall:flex hidden h-full '>
+        <Features/>
+      </div>
     </div>
   )
 }

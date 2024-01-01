@@ -9,10 +9,10 @@ export const getuserbyid = (username,setpeopledata,bool)=>async(dispatch)=>{
 
     const {data}=await api.getuserbyid(username);
     if(data)
-    setpeopledata(data.result);
+    setpeopledata(data?.result);
     if(bool)
     {
-      dispatch(profile_data(data.result));
+      dispatch(profile_data(data?.result));
     }
   } catch (error) {
     console.log(error);
@@ -27,43 +27,23 @@ export const getselfdata = (username)=>async(dispatch)=>{
     console.log(error);
   }
 }
-export const getuser = (username) => async (dispatch) => {
 
-  try {
-    const { data } = await api.getusers(username);
-    // dispatch({ type: 'FETCH_USERS', data });
-    dispatch(fetch_users(data));
-  } catch (error) {
-    console.log(error);
-
-  }
-};
 
 export const signin = (formdata, navigate) => async (dispatch) => {
 
   try {
    
     const { data } = await api.signin(formdata);
+
     // dispatch({ type: 'AUTH_SUCCESS', data });
-    console.log(data);
+    console.log("the data",data);
     dispatch(auth_success(data));
     navigate('/');
   } catch (error) {
     // dispatch({ type: 'SIGNIN_ERROR', payload: errorMessage });
-    console.log(error);
+    console.log("heloooooooooooooooooo",error);
     }
 };
-// export const googlesignin=(formdata)=>async(dispatch)=>{
-//   try {
-//     const { data } = await api.signin(formdata);
-
-//     dispatch({ type: 'AUTH_SUCCESS', data });
-//     navigate('/');
-//   } catch (error) {
-//     const errorMessage = error.response.data;
-//     dispatch({ type: 'SIGNIN_ERROR', payload: errorMessage });
-//   }
-// }
 export const googlesignup = (formdata, navigate) => async (dispatch) => {
   try {
 
@@ -78,7 +58,7 @@ export const googlesignup = (formdata, navigate) => async (dispatch) => {
     client.createIfNotExists(doc).then(() => {
       console.log('added');
     });
-    dispatch(google_signup(data));
+    dispatch(auth_success(data));
     // dispatch({ type: 'GOOGLE_SIGNUP', data });
     localStorage.setItem('profile', JSON.stringify(data));
 
@@ -97,20 +77,16 @@ export const signup = (formdata, setisSignin, isSignin) => async (dispatch) => {
       _id: data?.result?.username,
       _type: 'user',
       username: data?.result?.username,
-      //  Image:'hmmm'
-
     }
     client.createIfNotExists(doc).then(() => {
       console.log('added');
     })
+    console.log("hmmmmmmm",data)
     dispatch(auth_success(data));
     // dispatch({ type: 'AUTH_SUCCESS', data });
     setisSignin(!isSignin)
   } catch (error) {
     console.log(error);
-    // const errorMessage = error.response.data;
-    // dispatch(signup_error(errorMessage));
-    // dispatch({ type: 'SIGNUP_ERROR', payload: errorMessage });
   }
 };
 export const getgoogleuser = (email) => async (dispatch) => {
@@ -129,14 +105,14 @@ export const getuserdetails = (setuserdetails, username,type) => async (dispatch
     const { data } = await api.getuserdetails(username);
     if(type)
     {
-      console.log(data.result.followers);
+      console.log(data?.result?.followers);
       if(type==='followers')
-      setuserdetails(data.result.followers);
+      setuserdetails(data?.result?.followers);
       if(type==='following')
-      setuserdetails(data.result.following);
+      setuserdetails(data?.result?.following);
     }
     else
-      setuserdetails(data.result);
+      setuserdetails(data?.result);
     dispatch(user_details(data));
   } catch (error) {
     console.log(error)

@@ -1,255 +1,431 @@
 import React, { useEffect, useState } from 'react'
-import Navbar from '../../components/navigationbar/Navbar'
 import { useDispatch, useSelector } from 'react-redux'
-import { getselfdata, getuserbyid, getuserdetails } from '../../actions/Auth'
-import { useLocation, useParams } from 'react-router-dom'
-import { FaSquarePlus } from "react-icons/fa6";
+import { useNavigate, useParams } from 'react-router-dom'
 import { avatar } from '../../assets'
-import EditProfile from './Components/EditProfile'
-import { getpostsbyusername } from '../../actions/Post'
-import Postbox from './Components/Postbox'
-import editpic from '../../assets/Edit.svg'
-import editgif from '../../assets/Edit.gif'
-import Switch from './Components/Switch'
-import Blogbox from './Components/Blogbox'
-import Popup from './Components/Popup'
 import LoadingSpinner from '../../components/Spinner/Spinner'
-import { requesting } from '../../actions/user'
-
+import { addNetwork, getProfileData } from '../../api';
+import { update_authData } from '../../reducers'
+import edit from '../../assets/icons/edit.svg'
+import Layout from './Components/Layout'
 const Profile = () => {
 
   // declarations
-  const dispatch = useDispatch();
   const { user } = useParams();
-  const localdata = useSelector((state) => state.authData);
-  const profiledata=useSelector((state)=>state.profile_data);
-  const location = useLocation();
-  console.log(profiledata);
+  const authdata = useSelector((state) => state.authData);
+  const navigate = useNavigate();
   // states
-  const [isEdit, setisEdit] = useState(false);
-  const [userdetails, setuserdetails] = useState(null)
-  const [edit, setedit] = useState(false)
-  const [showfollowers, setshowfollowers] = useState(false);
-  const [showfollowing, setshowfollowing] = useState(false);
-  const [boolremove, setboolremove] = useState(1);
-  const [b, setb] = useState(false);
-  const [showposts, setshowposts] = useState(true);
-  const [loading, setloading] = useState(false);
+  const [loading, setloading] = useState(true);
+  const [loadingspinner, setloadingspinner] = useState(false);
+
   const [userposts, setuserposts] = useState([]);
-  const [x,setx]=useState(0);
-  
+  const [usersavedposts, setusersavedposts] = useState([]);
+  const [active, setactive] = useState(0);
+  const [userdata, setuserdata] = useState(null);
+  const [others, setothers] = useState(false);
+  const dispatch = useDispatch();
   //functions 
-  const changeremove = () => {
-    setboolremove(boolremove + 1);
+  console.log(userdata);
+  const func2 = async (username) => {
+    const p = { user: authdata.username, touser: user };
+    setloadingspinner(true);
+    try {
+      const { data } = await addNetwork(p);
+
+      dispatch(update_authData(data));
+      setuserdata(data.touser);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setloadingspinner(false);
+    }
   }
-  const handleclick = () => {
-    setloading(true)
-    dispatch(requesting(user, localdata))
-      .then(() => {
-        setx(x+1);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      // setLoading(true);
+      // setError(null);
+      setloading(true);
+      try {
+        const response = await getProfileData(user);
+        console.log(response);
+        setuserdata(response.data.result);
+        setuserposts(response.data.posts);
+        setusersavedposts(response.data.saved);
+        if (user === authdata.username) {
+          setothers(false);
+          dispatch(update_authData(response.data));
+
+        }
+        else
+          setothers(true);
+        console.log(response.data)
+      } catch (error) {
+        console.log(error)
+      } finally {
         setloading(false);
-      })
-      .catch(error => {
-        console.error("Error occurred:", error);
-      });
-  };
+      }
+    };
 
-  // useeffects
-  useEffect(() => {
-    if (localdata?.username === user) {
-      setisEdit(true);
-    }
-    else {
-      setisEdit(false);
-    }
-  }, [user, localdata, location.pathname])
-  useEffect(() => {
-    // if(localdata?.username==user)
-    //   dispatch(getselfdata(localdata.username));
-    // else
-      dispatch(getuserbyid(user, setuserdetails,"profile"));
-  }, [user, edit, b,x, location.pathname, showfollowers, showfollowing])
- 
-  useEffect(() => {
-    if (userdetails)
-      dispatch(getpostsbyusername(userdetails?.username, setuserposts));
-  }, [userdetails])
-  
-  
+    fetchUser();
+  }, [location.pathname]);
   return (
-    <div className=' relative  md:w-[75%] sm:w-[68%] ss:w-[80%] w-full ssm:w-[74%] ac:w-[78%] font-poppins text-white ss:h-full h-[80%]  '>
 
-      {profiledata !== null ? (
-        <div className='h-full  overflow-scroll w-full '>
-          <div className='flex px-1   ms:flex-row flex-col ac:px-32 md:px-14 ssm:px-10 sm:px-8 mms:px-4  pt-10 ac:gap-10 md:gap-7 ssm:gap-3 gap-5'>
-            <div className='flex  mx-auto    justify-center items-center h-[200px]  md:min-w-[200px] ms:min-w-[180px] min-w-[180px] max-w-[180px]'>
-              <img className='object-fill h-full w-full rounded-md  shadow-sm shadow-black' src={profiledata?.profilepicture || avatar} alt="" />
-            </div>
-            <div className='flex gap-1 ms:w-[60%] w-[100%]      flex-col pt-2 '>
-              <h3 className='text-[30px] flex ms:justify-normal justify-center  w-full'>
-                {profiledata?.username}
-              </h3>
-              <div className='text-[20px] w-full text-dimWhite flex ms:justify-normal justify-center gap-2 mt-2'>
-                <span>
-                  {profiledata?.firstname}
-                </span>
-                <span>
-                  {profiledata?.lastname}
-                </span>
+    <div className='h-full w-full font-poppins text-white   '>
+      {loading === true ? (
+        <div className='flex flex-col gap-2 overflow-scroll h-full w-full '>
+
+
+          <div className='w-full flex  px-4 h-[260px]'>
+            <div className='h-full  w-full pt-5 flex   '>
+
+              <div className='w-[200px] pt-1  h-full'>
+                <div className='h-[200px] bg-blue-900 animate-pulse w-full '>
+
+                </div>
               </div>
+              <div className='w-[calc(100%-200px)] pl-2 flex flex-col gap-2     h-full pt-4 '>
+                <h3 className='text-[35px] animate-pulse bg-blue-900 pl-1  flex justify-between w-full'>
+                  <span>
+                  </span>
+                  <span className='  text-dimWhite px-4 h-[50px] flex justify-center items-center w-[140px] '>
 
-              {
-                profiledata?.bio?.length > 0 ? (
-                  <div className='text-[18px] flex ms:justify-normal justify-center items-center ms:px-0 px-10 break-all  text-dimWhite mt-3'>
-                    {profiledata?.bio}
-                  </div>
-                ) : (
-                  <div className='hidden'></div>
-                )
-              }
-              <div className='mt-3 font-semibold py-3 sm:gap-4 ss:gap-2 gap-3 sm:text-[20px] ss:text-[17px] text-[14px] flex ms:justify-normal justify-center'>
-                <div onClick={() => setshowfollowers(true)} className='flex gap-2 cursor-pointer '>
-                  <span>
-                    {profiledata?.followers?.length}
                   </span>
+
+                </h3>
+                <h3 className='text-[35px] animate-pulse bg-blue-900 pl-1  flex justify-between w-full'>
                   <span>
-                    Followers
                   </span>
-                </div>
-                <div onClick={() => setshowfollowing(true)} className='flex gap-2 cursor-pointer '>
+                  <span className='  text-dimWhite px-4 h-[50px] flex justify-center items-center w-[140px] '>
+
+                  </span>
+
+                </h3>
+                <h3 className='text-[35px] animate-pulse bg-blue-900 pl-1  flex justify-between w-full'>
                   <span>
-                    {profiledata?.following?.length}
                   </span>
-                  <span>
-                    Following
+                  <span className='  text-dimWhite px-4 h-[50px] flex justify-center items-center w-[140px] '>
+
                   </span>
-                </div>
-                <div className='flex gap-2 cursor-pointer '>
-                  <span>
-                    {userposts?.length}
-                  </span>
-                  <span>
-                    Posts
-                  </span>
-                </div>
+
+                </h3>
 
 
               </div>
-              {/* if(userdata?.followers?.includes(Tdata?.username) && Tdata?.followers?.includes(userdata?.username)) {
-                console.log("hmmmm","hmmmmmmmmmmmmmmm")
-                setvalue("ADDED");
-            }
-            else if(Tdata?.pending?.includes(userdata.username))
-            {
-                setvalue("Pending")
-            }
-            else if((!userdata?.followers?.includes(Tdata?.username) && !Tdata?.followers?.includes(userdata.username)))
-            {
-                setvalue("ADD");
-            } */}
-              {!isEdit && (
-                <span className='flex ms:justify-normal justify-center  '>
-                  {loading === false ? (<span onClick={handleclick} className='text-sky-400 cursor-pointer'>
-                    {localdata?.followers?.includes(profiledata?.username) && profiledata?.followers?.includes(localdata?.username) && <>
-                      ADDED
-                    </>} 
-                    {profiledata?.pending?.includes(localdata.username) && <>
-                      Pending
-                    </> }
-                    {(!localdata?.followers?.includes(profiledata?.username) && !profiledata?.pending?.includes(localdata.username)) && (
-                      <>
-                        ADD
-                      </>
-                    )} 
-      
-                  </span>) : (
-                    <LoadingSpinner />
-                  )}
-
-                </span>
-
-              )}
-
 
             </div>
-            {
-              isEdit && (
-                <div className='mt-3 ssm:inline-block hidden   min-w-[130px]'>
-                  <button onClick={() => setedit(true)} className='flex justify-start items-center'>
-                    <span className='h-22 w-18 '>
-                      <img className='h-full object-fill w-16' src={editgif} alt="" />
-                    </span>
-                    {/* <span><FaSquarePlus /> </span> */}
-                    <span className='w-full'>Edit Profile</span>
-
-                  </button>
-
-                </div>
-              )
-            }
-
-
-
 
           </div>
+          <div className=' bg-blue-900 animate-pulse w-[80%] mx-auto  pl-4 flex min-h-[62px] justify-center  gap-5 '>
+            <div className='w-[330px] h-full flex gap-5 '>
 
-          {showfollowers && (
-            <Popup type={"followers"} userid={profiledata?.username} setuserdetails={setuserdetails} b={setb} edit={isEdit} changeremove={changeremove} data={profiledata?.followers} name={"Followers"} setdefault={setshowfollowers} />
-          )}
-          {showfollowing && (
-            <Popup type={"following"} b={setb} edit={isEdit} changeremove={changeremove} data={profiledata?.following} name={"Following"} setdefault={setshowfollowing} />
-          )}
-          {edit && (
-            <EditProfile userdetails={profiledata} setedit={setedit} />
-          )}
-          <div className='w-full flex justify-center items-center gap-5 mt-16 h-[60px]'>
-            <Switch data={["Posts", "Blogs"]} setshowposts={setshowposts} />
-
-          </div>
-          <div className={`w-full mt-5 mb-2 py-3 ms:px-5 px-1 flex justify-center`}>
-            <div className={`grid ssm:grid-cols-3 mms:grid-cols-2 grid-cols-1  ms:gap-6 gap-2 ${showposts === true ? "" : "hidden"} `}>
-              {userposts.map((post, index) => (
-                <Postbox data={post} key={index} />
-              ))}
             </div>
-            <div className={`grid grid-cols-1 w-full gap-3 ${showposts === false ? "" : "hidden"} `}>
-              {userposts.map((post, index) => (
-                <Blogbox data={post} key={index} />
-              ))}
-            </div>
+
+            {/* <Switch data={["Posts", "Blogs","saved"]} setshowposts={setshowposts} /> */}
+
           </div>
+          <div className='mt-4 flex flex-wrap  h-full gap-3 w-[90%] mx-auto'>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((item, index) => (
+              <div key={item} className='w-[300px] bg-blue-900 animate-pulse h-[300px]'>
+
+              </div>
+            ))}
+          </div>
+
+
 
         </div>
       ) : (
-        <div className='h-full animate-pulse w-full '>
-          <div className='flex px-32 pt-10 gap-10'>
-            <div className='flex justify-center items-center h-[200px] bg-blue-800 w-[200px]'>
+        <div className='flex flex-col gap-2 overflow-scroll h-full w-full '>
+
+          <div className='w-full xsmall:hidden  flex px-4 '>
+            <div className='h-full   w-full pt-5 flex flex-col   '>
+
+              <div className='w-full flex  '>
+                <div className='xmedium:h-[150px] medium:h-[110px] medium:w-[110px] w-[90px] h-[90px] rounded-full xmedium:w-[150px] '>
+                  <img className='h-full rounded-full  w-full' src={userdata?.profilepicture || avatar} alt="" />
+
+                </div>
+                <div className='medium:pl-5 pl-2 pt-2'>
+                  <div className='text-[28px]'>
+                    {"@" + userdata?.username}
+                  </div>
+                  <div className='mt-4 pl-2 gap-3 text-[15px] flex '>
+                    <button onClick={() => navigate(`/Network/${user}/${"Followers"}`)} className='flex flex-col-reverse gap-2 cursor-pointer '>
+                      <span className=' '>
+                        {userdata?.followers?.length}
+                      </span>
+                      <span>
+                        Followers
+                      </span>
+                    </button>
+                    <div onClick={() => navigate(`/Network/${user}/${"Following"}`)} className='flex flex-col-reverse gap-2 cursor-pointer '>
+                      <span>
+                        {userdata?.following?.length}
+                      </span>
+                      <span>
+                        Following
+                      </span>
+                    </div>
+                    <div onClick={() => document.getElementById('posts').scrollIntoView({ behavior: 'smooth' })} className='flex flex-col-reverse gap-2 cursor-pointer '>
+                      <span>
+                        {userposts?.length}
+                      </span>
+                      <span>
+                        Posts
+                      </span>
+
+
+                    </div>
+
+
+                  </div>
+
+
+
+                </div>
+
+              </div>
+              <div className='w-full flex pl-1 mt-4 mb-4'>
+                <div className='w-[55%] flex flex-col gap-2'>
+                  <div className=' font-serif text-[20px] w-full'>
+                    {userdata?.firstname + " " + userdata?.lastname}
+                  </div>
+                  <div className={`w-full ${userdata?.bio?.length === 0 ? "hidden" : ""}`}>
+                    {userdata?.bio}
+                  </div>
+                </div>
+
+                <div className='w-[45%] flex justify-end'>
+                  <div className={` text-dimWhite ${others === true ? "h-[45px] w-[130px]" : "h-[50px] w-[133px]"} flex justify-center items-center  `}>
+                    {others === true ? (
+                      <button onClick={() => func2(user)} className={`text-[16px] ${authdata.following.includes(user) ? "bg-orange-400" : "bg-orange-500"} h-full w-full rounded-lg `}>
+                        {authdata.following.includes(user) === true ? (
+                          <span className='flex justify-center items-center'>
+                            {loadingspinner === true ? (
+                              <span className='flex justify-center items-center'>
+                                <LoadingSpinner />
+                              </span>
+                            ) : (
+                              <span className='flex  justify-center items-center'>
+                                following
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className='flex justify-center items-center'>
+                            <span className='flex justify-center items-center'>
+                              {loadingspinner === true ? (
+                                <span className='flex justify-center items-center'>
+                                  <LoadingSpinner />
+                                </span>
+                              ) : (
+                                <span className='flex justify-center items-center'>
+                                  Add
+                                </span>
+                              )}
+                            </span>
+                          </span>
+                        )}
+                      </button>
+                    ) : (
+                      <button onClick={() => navigate('/Editprofile')} className='text-[15px] h-full flex w-full rounded-lg gap-1 bg-slate-950'>
+                        <img className='my-auto ' src={edit} alt="" />
+                        <span className='flex h-full  justify-center items-center'>Edit Profile</span>
+                      </button>
+                    )}
+
+                  </div>
+                </div>
+
+              </div>
+
             </div>
-            <div className='flex gap-1 w-[300px]  flex-col pt-4 '>
-              <h3 className='h-[40px] w-[200px]  bg-blue-800'>
-              </h3>
-              <div className='h-[30px] w-[300px] bg-blue-800 flex gap-2'>
+
+          </div>
+          <div className='w-full  xsmall:flex hidden px-4 h-[260px]'>
+            <div className='h-full w-full pt-5 flex   '>
+
+              <div className='w-[200px] pt-1  h-full'>
+                <div className='h-[200px] w-full '>
+                  <img className='h-full rounded-xl  w-full' src={userdata?.profilepicture || avatar} alt="" />
+
+                </div>
+              </div>
+              <div className='w-[calc(100%-200px)] pl-2     h-full pt-4 '>
+                <h3 className='text-[35px] pl-1  flex justify-between w-full'>
+                  <span>
+                    {"@" + userdata?.username}
+                  </span>
+                  <span className={` text-dimWhite ${others === true ? "px-2" : "px-4"}px-2 h-[50px] flex justify-center items-center w-[153px]  `}>
+                    {others === true ? (
+                      <button onClick={() => func2(user)} className={`text-[20px] ${authdata.following.includes(user) ? "bg-orange-400" : "bg-orange-500"} h-full w-full rounded-lg `}>
+                        {authdata.following.includes(user) === true ? (
+                          <span className='flex justify-center items-center'>
+                            {loadingspinner === true ? (
+                              <span className='flex justify-center items-center'>
+                                <LoadingSpinner />
+                              </span>
+                            ) : (
+                              <span className='flex justify-center items-center'>
+                                following
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className='flex justify-center items-center'>
+                            <span className='flex justify-center items-center'>
+                              {loadingspinner === true ? (
+                                <span className='flex justify-center items-center'>
+                                  <LoadingSpinner />
+                                </span>
+                              ) : (
+                                <span className='flex justify-center items-center'>
+                                  Add
+                                </span>
+                              )}
+                            </span>
+                          </span>
+                        )}
+                      </button>
+                    ) : (
+                      <button onClick={() => navigate('/Editprofile')} className='text-[20px] h-full flex w-full rounded-lg gap-1 bg-slate-950'>
+                        <img className='my-auto ' src={edit} alt="" />
+                        <span className='flex h-full  justify-center items-center'>Edit Profile</span>
+                      </button>
+                    )}
+
+                  </span>
+
+                </h3>
+                <div className='text-[25px] pl-1 w-full text-slate-300 flex gap-2 mt-1'>
+                  <span>
+                    {userdata?.firstname}
+                  </span>
+                  <span>
+                    {userdata?.lastname}
+                  </span>
+                </div>
+                <div className='mt-5 font-semibold ml-4  gap-4 text-[20px] flex '>
+                  <button onClick={() => navigate(`/Network/${user}/${"Followers"}`)} className='flex gap-2 cursor-pointer '>
+                    <span className=''>
+                      {userdata?.followers?.length}
+                    </span>
+                    <span>
+                      Followers
+                    </span>
+                  </button>
+                  <div onClick={() => navigate(`/Network/${user}/${"Following"}`)} className='flex gap-2 cursor-pointer '>
+                    <span>
+                      {userdata?.following?.length}
+                    </span>
+                    <span>
+                      Following
+                    </span>
+                  </div>
+                  <div onClick={() => document.getElementById('posts').scrollIntoView({ behavior: 'smooth' })} className='flex gap-2 cursor-pointer '>
+                    <span>
+                      {userposts?.length}
+                    </span>
+                    <span>
+                      Posts
+                    </span>
+
+
+                  </div>
+
+
+                </div>
+                {
+                  userdata?.bio?.length > 0 ? (
+                    <div className='text-[20px] font-sans ml-4 overflow-scroll  h-[100px] mt-3 flex   break-all  text-dimWhite '>
+                      {userdata?.bio}
+                    </div>
+                  ) : (
+                    <div className='hidden'></div>
+                  )
+                }
 
               </div>
-              <div className='mt-5 w-full font-semibold py-3 gap-4 bg-blue-800 h-[20px] flex'>
-
-
-
-              </div>
-
-              <div className='h-[22px] w-full bg-blue-800 mt-3'>
-              </div>
-
-
-
-
 
             </div>
 
+          </div>
+          <div className='h-1 w-full border-t-[1px] border-blue-900 mt-10'>
+
+          </div>
+          <div className='w-full  flex min-h-[52px] justify-center mt-3  gap-5 '>
+            <div className='w-[180px] h-full flex gap-5 '>
+              <button onClick={() => { setactive(0) }} className={` ${active == 0 ? "bg-orange-500" : "bg-black"} h-full rounded-lg w-[90px]`}>
+                Posts
+              </button>
+              {/* <button onClick={()=>{setactive(1)}} className={` ${active==1?"bg-orange-500":"bg-black" } h-full rounded-lg w-[120px]`}>
+            Blogs
+          </button> */}
+              <button onClick={() => setactive(2)} className={` ${active == 2 ? "bg-orange-500" : "bg-black"} h-full rounded-lg w-[90px]`}>
+                Saved
+              </button>
+            </div>
+
+            {/* <Switch data={["Posts", "Blogs","saved"]} setshowposts={setshowposts} /> */}
+
+          </div>
+          {active == 0 && (
+            <div id='posts' className={`w-full h-full   pt-4 pb-2  flex `}>
+              <div className={`mx-2  flex flex-wrap justify-center medium:gap-2 gap-4 w-full  ${active === 0 ? "" : "hidden"} `}>
+
+                {userposts.map((post, index) => (
+
+                  <div onClick={() => navigate(`/Post/${post._id}`)} key={post._id} className={` xsmall:w-[32%] medium:w-[48%] w-[330px] ${post?.selectedfile === null ? "hidden" : ""} p-0 Large:h-[350px] xlarge:h-[300px] xsmall:h-[260px] medium:h-[270px] h-[350px] `}>
+                    <img className='h-full w-full' src={post?.selectedfile} alt="" />
+                  </div>
+                  // <Postbox data={post} key={index} />
+                ))}
+              </div>
+            </div>
+          )
+          }
+          {active == 2 && (
+            <div id='saved' className={`w-full h-full   pt-4 pb-2  flex `}>
+              <div className={`mx-2  flex flex-wrap justify-center medium:gap-2 gap-4 w-full  ${active === 2 ? "" : "hidden"} `}>
+
+                {usersavedposts.map((post, index) => (
+
+                  <div onClick={() => navigate(`/Post/${post._id}`)} key={post._id} className={`Large:w-[24%] xsmall:w-[32%] medium:w-[48%] w-[300px] ${post?.selectedfile === null ? "hidden" : ""} p-0 Large:h-[300px] xlarge:h-[300px] xsmall:h-[260px] medium:h-[270px] h-[300px] `}>
+                    <img className='h-full w-full' src={post?.selectedfile} alt="" />
+                  </div>
+                  // <Postbox data={post} key={index} />
+                ))}
+              </div>
+            </div>
+          )
+          }
 
 
+          {/* {usersavedposts.length} */}
+          {/* <div id='posts' className={`w-full h-full pb-2  flex `}>
+            <div className={`mx-2  flex flex-wrap justify-center medium:gap-2 gap-4 w-full  ${active === 2 ? "" : "hidden"} `}>
 
+              {usersavedposts.map((post, index) => (
 
+                <div onClick={() => navigate(`/Post/${post._id}`)} key={post._id} className={`xsmall:w-[32%] medium:w-[48%] w-[300px] bg-black ${post?.selectedfile === null ? "hidden" : ""} p-0 Large:h-[450px] xlarge:h-[300px] xsmall:h-[260px] medium:h-[270px] h-[300px] `}>
+                  <img className='h-full w-full' src={post?.selectedfile} alt="" />
+                </div>
+                // <Postbox data={post} key={index} />
+              ))}
+            </div>
+          </div> */}
+          {/* <div id='posts' className={`w-full pt-4 pb-2 h-full bg-white   flex justify-center`}>
+            <div className={`flex flex-wrap w-full h-full mx-2 justify-center  gap-2 ${active === 2 ? "" : "hidden"} `}>
+              {usersavedposts.map((post, index) => (
+
+                <div onClick={() => navigate(`/Post/${post._id}`)} key={post._id} className={`xsmall:w-[32%] medium:w-[48%] w-[300px] bg-black ${post?.selectedfile === null ? "hidden" : ""} p-0 Large:h-[450px] xlarge:h-[300px] xsmall:h-[260px] medium:h-[270px] h-[300px] `}>
+                  <img className='h-full w-full' src={post?.selectedfile} alt="" />
+                </div>
+                // <Postbox data={post} key={index} />
+              ))}
+            </div>
+          </div> */}
+          <div className='min-h-[10px]'>
 
           </div>
         </div>

@@ -1,5 +1,11 @@
 import mongoose from 'mongoose';
 
+const commentSchema=mongoose.Schema({
+  username:String,
+  profilepicture:String,
+  comment:String,
+  createdAt:String,
+});
 const postSchema = mongoose.Schema(
   {
     title: String,
@@ -9,13 +15,9 @@ const postSchema = mongoose.Schema(
     selectedfile: [String], // Store an array of compressed image data as a binary buffer
     likeCount:[String],
     Comments: [
-      {
-        username: String,
-        commentText: String,
-      },
+      commentSchema
     ],
   },
-  // Set timestamps option to true to enable createdAt and updatedAt fields
   { timestamps: true }
 );
 

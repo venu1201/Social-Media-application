@@ -1,70 +1,45 @@
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
-import Notificationbox from './Components/Notificationbox';
-import LoadingSpinner from '../../components/Spinner/Spinner';
+import { UpdateNotifications } from '../../api';
+import { update_authData } from '../../reducers';
+import { useNavigate } from 'react-router-dom';
+import { MdOutlineNotificationAdd } from "react-icons/md";
 
 
 const Notifications = () => {
-  const data = useSelector((state) => state.authData);
-  const [pending, setpending] = useState([]);
-  const [loadingpage, setloadingpage] = useState(true);
-  // useEffect(() => {
-  //     dispatch(getuserdetails(setuserdata, data?.username));
-
-  // }, [k])
+  const authData = useSelector((state) => state.authData);
+  const dispatch=useDispatch();
   useEffect(() => {
-    if (data) {
-      setpending(data?.pending);
-      setloadingpage(false);
+    const updateNotifications=async()=>{
+      try {
+        const response=await UpdateNotifications(authData.username);
+        dispatch(update_authData(response.data));
+      } catch (error) {
+        console.log(error);
+      }
     }
-  }, [data])
+    const timeoutId = setTimeout(updateNotifications, 10000);
 
-  // useEffect(() => {
-  //   if(pending?.length>0)
-  //   {
-  //     dispatch(getallpendingusers(setallpendings,pending));
-  //   }
-  // }, [pending])
-
-  // const handleclick = (type, touser) => {
-  //   const obj = { username: data?.result?.username, method: type };
-
-  //   dispatch(acceptanddeleteuser(obj, touser)).then(() => {
-  //     setk(k => k + 1);
-
-
-  //   });
-
-
-
-  // }
-
-
+    // Cleanup the timeout to avoid unintended behavior
+    return () => clearTimeout(timeoutId); 
+   }, [])
+  const navigate=useNavigate();
   return (
-    <div className=' md:w-[75%]  sm:w-[68%] ss:w-[90%] w-full ssm:w-[74%] ac:w-[78%] font-poppins text-white h-full' >
-      {loadingpage === false ? (
-        <div className=''>
-          {pending.length > 0 ? (
-            <div className='mt-10'>
-              {pending?.map((item, index) => (
-                <div className='flex flex-col'>
-                  <Notificationbox key={item} item={item} userdata={data} />
+    <div className='w-full overflow-scroll h-full flex justify-center items-center font-mono' >
+      <div className='w-[95%] flex flex-col gap-3 h-[90%]'>
+      {[...authData.Notifications].reverse().map((item,index)=>(
+        <div key={index}  className={`w-full text-[18px] min-h-[100px] items-center px-5 flex ${item.seen===false?"bg-dimBlue animate-pulse":"animate-none bg-slate-950"} rounded-2xl`}>
+          <div className='mr-3'><MdOutlineNotificationAdd /></div>
+          <div className='flex flex-wrap'>
+          <span onClick={()=>navigate(`/Profile/${item.username}`)} className='font-bold mr-3 cursor-pointer text-orange-700'>{item.username}</span>
+           <span className='mr-3'>{item.message}</span>
+            <span onClick={()=>navigate(`/Post/${item.postId}`)} className={`font-bold cursor-pointer text-orange-700 ${item.postId===null?"hidden":""}`}>{item?.postId}</span>
+          </div>
 
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className='mt-10 p-4 text-[20px] flex justify-center'>
-              No Notifications Yet....Please Come Again
-            </div>
-          )}
         </div>
-
-      ) : (
-        <div className='flex justify-center mt-10'>
-          <LoadingSpinner />
-        </div>
-      )}
+      ))}
+      </div>
+      
 
 
     </div>

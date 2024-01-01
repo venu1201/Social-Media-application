@@ -6,4 +6,5 @@ import comment from '../assets/comment.svg'
 import Globe from '../assets/Globe.gif'
 import logo2 from '../assets/logo2.png';
 import news from '../assets/news.jpg'
-export {logo,news,signin,avatar,like,comment,Globe,logo2} ;
+import photo from '../assets/photo.jpg'
+export {logo,news,signin,avatar,like,comment,Globe,logo2,photo} ;

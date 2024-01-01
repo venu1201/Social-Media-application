@@ -5,20 +5,23 @@ import { useSelector } from 'react-redux';
 
 
 const App = () => {
-//  const navigate= useNavigate();
-//  const user=useSelector((state)=>state);
-//  useEffect(() => {
-//    if(user.authData===null)
-//    navigate('/Auth')
-//  }, [])
- 
+  //  const navigate= useNavigate();
+
+  //  const state=useSelector((state)=>state);
+  //  console.log(state);
+  //  useEffect(() => {
+  //    if(user.authData===null)
+  //    navigate('/Auth')
+  //  }, [])
+
   // localStorage.removeItem('profile');
   // const store=useSelector((state)=>state);
   // console.log("store",store);
   return (
+    
     <BrowserRouter>
       <RouteWrapper />
-      
+
     </BrowserRouter>
   );
 };
